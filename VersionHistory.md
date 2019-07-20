@@ -6,6 +6,8 @@ Describe changes here when they're committed to the `master` branch. Move them t
 
 Prefix the description of the change with `[major]`, `[minor]`, or `[patch]` in accordance with [Semantic Versioning](https://semver.org/).
 
+* [major] Move PackageDiff settings into `PackageDiffSettings`. Now disabled by default.
+
 ## Released
 
 ### 3.0.0

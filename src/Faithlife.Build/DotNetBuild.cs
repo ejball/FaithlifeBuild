@@ -43,10 +43,14 @@ namespace Faithlife.Build
 			var nugetSource = settings.NuGetSource ?? "https://api.nuget.org/v3/index.json";
 			var msbuildSettings = settings.MSBuildSettings;
 			var sourceLinkSettings = settings.SourceLinkSettings;
+			var packageDiffSettings = settings.PackageDiffSettings;
 
 			var dotNetTools = settings.DotNetTools ?? new DotNetTools(Path.Combine("tools", "bin"));
+			var packageDiffVersion = packageDiffSettings?.ToolVersion ?? "0.2.1";
 			var sourceLinkVersion = sourceLinkSettings?.ToolVersion ?? "3.1.1";
 			var xmlDocMarkdownVersion = settings.DocsSettings?.ToolVersion ?? "1.5.1";
+
+			bool hasBadPackageVersion = false;
 
 			build.Target("clean")
 				.Describe("Deletes all build output")
@@ -153,6 +157,27 @@ namespace Faithlife.Build
 					var packagePaths = FindFilesFrom(nugetOutputPath, "*.nupkg");
 					if (packagePaths.Count == 0)
 						throw new ApplicationException("No NuGet packages created.");
+
+					if (packageDiffSettings != null)
+					{
+						var shouldTestPackage = packageDiffSettings.ShouldTestPackage;
+						var packageDiffPath = dotNetTools.GetToolPath($"Faithlife.PackageDiffTool.Tool/{packageDiffVersion}", "packagediff");
+
+						foreach (var packagePath in packagePaths)
+						{
+							var packageInfo = GetPackageInfo(packagePath);
+							if (shouldTestPackage == null || shouldTestPackage(packageInfo.Name))
+							{
+								int exitCode = RunApp(packageDiffPath,
+									new AppRunnerSettings
+									{
+										Arguments = new[] { "--verifyversion", "--verbose", packagePath },
+										IsExitCodeSuccess = x => x <= 2, // don't fail on crash
+									});
+								hasBadPackageVersion = exitCode == 2;
+							}
+						}
+					}
 				});
 
 			build.Target("publish")
@@ -197,6 +222,9 @@ namespace Faithlife.Build
 						shouldPublishPackages = true;
 						shouldPublishDocs = !triggerMatch.Groups["suffix"].Success;
 					}
+
+					if (shouldPublishPackages && hasBadPackageVersion)
+						throw new ApplicationException("Use suggested package version to publish.");
 
 					if (shouldPublishPackages || shouldPublishDocs)
 					{

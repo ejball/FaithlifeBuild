@@ -75,6 +75,11 @@ namespace Faithlife.Build
 		public SourceLinkSettings SourceLinkSettings { get; set; }
 
 		/// <summary>
+		/// The PackageDiff settings. Must be set to verify semver with PackageDiff.
+		/// </summary>
+		public PackageDiffSettings PackageDiffSettings { get; set; }
+
+		/// <summary>
 		/// Clones the settings.
 		/// </summary>
 		public DotNetBuildSettings Clone()
@@ -84,6 +89,7 @@ namespace Faithlife.Build
 			clone.MSBuildSettings = clone.MSBuildSettings?.Clone();
 			clone.TestSettings = clone.TestSettings?.Clone();
 			clone.SourceLinkSettings = clone.SourceLinkSettings?.Clone();
+			clone.PackageDiffSettings = clone.PackageDiffSettings?.Clone();
 			return clone;
 		}
 	}
